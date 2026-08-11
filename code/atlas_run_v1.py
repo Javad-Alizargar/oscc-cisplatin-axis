@@ -6,6 +6,7 @@ except Exception:
  subprocess.check_call([sys.executable,'-m','pip','install','-q','scvi-tools==1.3.3','scanpy>=1.10','scikit-misc'])
  print('Installation complete. Runtime will restart; rerun this cell after reconnection.');os.kill(os.getpid(),9)
 from pathlib import Path
+import gc
 import json,zipfile
 import anndata as ad,numpy as np,pandas as pd
 from scipy import sparse
@@ -19,9 +20,11 @@ def load(ds):
  c=ad.read_h5ad(ROOT/f'03_analysis_ready/h5ad/{ds}_counts_QC.h5ad');s=ad.read_h5ad(ROOT/f'03_analysis_ready/state_space/{ds}_lineage_CNV_resistance_scored.h5ad',backed='r')
  cols=['predicted_lineage','malignant_epithelial_evidence','resistance_axis_dataset_z','resistance_axis_sample_z'];c.obs=c.obs.join(s.obs[cols],how='left')
  sym=c.var.gene_symbol.astype(str);keep=sym.notna()&~sym.duplicated()&(sym!='nan');c=c[:,keep].copy();c.var_names=sym[keep].values;c.obs['dataset']=ds;return c
-a1,a2=load('GSE172577'),load('GSE215403');common=a1.var_names.intersection(a2.var_names);a=ad.concat([a1[:,common],a2[:,common]],join='inner',merge='same',index_unique='-')
-a.layers['counts']=a.X.copy();sc.pp.highly_variable_genes(a,n_top_genes=4000,flavor='seurat_v3',batch_key='sample_id',layer='counts',subset=True)
-base=a.copy();sc.pp.normalize_total(base,target_sum=1e4);sc.pp.log1p(base);sc.pp.scale(base,max_value=10);sc.tl.pca(base,n_comps=30,random_state=SEED)
+a1,a2=load('GSE172577'),load('GSE215403');common=a1.var_names.intersection(a2.var_names)
+a=ad.concat([a1[:,common],a2[:,common]],join='inner',merge='same',index_unique='-');del a1,a2;gc.collect()
+a.layers['counts']=a.X.copy();sc.pp.highly_variable_genes(a,n_top_genes=3000,flavor='seurat_v3',batch_key='sample_id',layer='counts',subset=True)
+# Preserve counts in the sparse layer; normalize X without zero-centering or densification.
+sc.pp.normalize_total(a,target_sum=1e4);sc.pp.log1p(a);sc.tl.pca(a,n_comps=30,zero_center=False,random_state=SEED)
 scvi.model.SCVI.setup_anndata(a,layer='counts',batch_key='sample_id',categorical_covariate_keys=['dataset'])
 model=scvi.model.SCVI(a,n_latent=20,n_layers=2,n_hidden=128,gene_likelihood='nb');model.train(max_epochs=150,early_stopping=True,check_val_every_n_epoch=5)
 a.obsm['X_scVI']=model.get_latent_representation();sc.pp.neighbors(a,use_rep='X_scVI',n_neighbors=30);sc.tl.umap(a,random_state=SEED);sc.tl.leiden(a,resolution=.8,key_added='scvi_cluster')
@@ -31,16 +34,16 @@ def entropy(rep,labels,k=30,n=15000):
   p=pd.Series(lab[q]).value_counts(normalize=True).values;out.append(-(p*np.log(p+1e-12)).sum()/np.log(max(len(np.unique(lab)),2)))
  return np.mean(out)
 rng=np.random.default_rng(SEED);ix=rng.choice(a.n_obs,min(15000,a.n_obs),False);metrics=[]
-for name,rep in [('PCA',base.obsm['X_pca']),('scVI',a.obsm['X_scVI'])]:
+for name,rep in [('Sparse PCA',a.obsm['X_pca']),('scVI',a.obsm['X_scVI'])]:
  metrics.extend([{'representation':name,'metric':'Dataset mixing entropy','value':entropy(rep,a.obs.dataset)},{'representation':name,'metric':'Lineage silhouette','value':silhouette_score(rep[ix],a.obs.predicted_lineage.astype(str).values[ix])}])
 pd.DataFrame(metrics).to_csv(TAB/'integration_metrics_v1.tsv',sep='\t',index=False)
 co=pd.DataFrame(a.obsm['X_umap'],columns=['UMAP1','UMAP2']);co['cell_id']=a.obs_names
 for c in ['dataset','sample_id','predicted_lineage','malignant_epithelial_evidence','resistance_axis_dataset_z','scvi_cluster']:co[c]=a.obs[c].values
 co.to_csv(TAB/'atlas_coordinates_v1.tsv.gz',sep='\t',index=False,compression='gzip');comp=pd.crosstab(a.obs.sample_id,a.obs.predicted_lineage,normalize='index');comp.to_csv(TAB/'sample_composition_v1.tsv',sep='\t')
-markers=['EPCAM','KRT8','KRT18','PTPRC','CD3D','CD79A','LST1','COL1A1','DCN','PECAM1','VWF','RGS5','ACTA2'];markers=[g for g in markers if g in base.var_names]
+markers=['EPCAM','KRT8','KRT18','PTPRC','CD3D','CD79A','LST1','COL1A1','DCN','PECAM1','VWF','RGS5','ACTA2'];markers=[g for g in markers if g in a.var_names]
 avg=[]
 for lin in sorted(a.obs.predicted_lineage.astype(str).unique()):
- m=a.obs.predicted_lineage.astype(str).values==lin;x=base[m,markers].X;x=x.toarray() if sparse.issparse(x) else np.asarray(x)
+ m=a.obs.predicted_lineage.astype(str).values==lin;x=a[m,markers].X;x=x.toarray() if sparse.issparse(x) else np.asarray(x)
  for j,g in enumerate(markers):avg.append({'lineage':lin,'gene':g,'mean':x[:,j].mean(),'fraction':(x[:,j]>0).mean()})
 pd.DataFrame(avg).to_csv(TAB/'marker_summary_v1.tsv',sep='\t',index=False)
 def panel(ax,l,t):ax.text(-.12,1.07,l,transform=ax.transAxes,fontweight='bold',fontsize=14,va='top');ax.set_title(t,loc='left',fontweight='bold',fontsize=10)
