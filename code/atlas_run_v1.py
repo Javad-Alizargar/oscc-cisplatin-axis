@@ -58,7 +58,7 @@ ax=axs[1,1];panel(ax,'e','Lineage-marker expression');pv=pd.DataFrame(avg).pivot
 ax=axs[1,2];panel(ax,'f','Quantitative integration diagnostics');sns.barplot(data=pd.DataFrame(metrics),x='metric',y='value',hue='representation',ax=ax,palette=['#999999','#009E73']);ax.set(xlabel='',ylabel='Metric value');ax.tick_params(axis='x',rotation=20);ax.legend(frameon=False)
 fig.suptitle('A patient-resolved single-cell atlas of oral squamous cell carcinoma',fontsize=15,fontweight='bold')
 fig.savefig(FIG/'Figure_atlas_v1.png',dpi=300,bbox_inches='tight');fig.savefig(FIG/'Figure_atlas_v1.tif',dpi=600,bbox_inches='tight',pil_kwargs={'compression':'tiff_lzw'});fig.savefig(FIG/'Figure_atlas_v1.pdf',bbox_inches='tight');plt.close(fig)
-summary={'n_cells':a.n_obs,'n_samples':a.obs.sample_id.nunique(),'n_common_genes':len(common),'n_hvg':a.n_vars,'datasets':a.obs.dataset.value_counts().to_dict(),'lineages':a.obs.predicted_lineage.value_counts().to_dict(),'metrics':metrics};(META/'summary_v1.json').write_text(json.dumps(summary,indent=2)+'\n')
+summary={'n_cells':a.n_obs,'n_samples':a.obs.sample_id.nunique(),'n_common_genes':len(common),'n_hvg':a.n_vars,'datasets':a.obs.dataset.value_counts().to_dict(),'lineages':a.obs.predicted_lineage.value_counts().to_dict(),'metrics':metrics};(META/'summary_v1.json').write_text(json.dumps(summary,indent=2,default=lambda x:x.item() if hasattr(x,'item') else str(x))+'\n')
 zip_path=Path('/content/atlas_out_v1.zip')
 with zipfile.ZipFile(zip_path,'w',zipfile.ZIP_DEFLATED) as z:
  for p in OUT.rglob('*'):
