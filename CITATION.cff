@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the archived release and associated paper."
+title: "OSCC cisplatin-resistance-associated transcriptional axis reproducibility package"
+type: software
+authors:
+  - family-names: Alizargar
+    given-names: Javad
+    orcid: "https://orcid.org/0000-0003-2966-1315"
+version: 1.0.0
+date-released: 2026-08-11
+repository-code: "https://github.com/Javad-Alizargar/oscc-cisplatin-axis"
+license: MIT
+identifiers:
+  - type: doi
+    value: "ZENODO_DOI_TO_BE_ADDED"
+    description: "Placeholder; replace after Zenodo archival"

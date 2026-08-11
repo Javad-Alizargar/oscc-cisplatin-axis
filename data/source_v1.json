@@ -1,0 +1,24 @@
+{
+  "DepMap_release": "24Q2",
+  "DepMap_DOI": "10.25452/figshare.plus.25880521.v1",
+  "DepMap_files": {
+    "Model.csv": {
+      "bytes": 559182,
+      "sha256": "a4cac376131b41aa10b60a075b11c80264bfa860a5509d22cde259c5e85867f8",
+      "url": "https://ndownloader.figshare.com/files/46489732"
+    },
+    "CRISPRGeneEffect.csv": {
+      "bytes": 419330454,
+      "sha256": "d155149181308f8e16b6a4677cde3e5af1ddef68ada1947486ae8c0bcb231452",
+      "url": "https://ndownloader.figshare.com/files/46489063"
+    },
+    "OmicsExpressionProteinCodingGenesTPMLogp1.csv": {
+      "bytes": 460868099,
+      "sha256": "39eff342bbbbe0a40208545e93a69cc85a945899592f9d683f87e3b2bb121670",
+      "url": "https://ndownloader.figshare.com/files/46490878"
+    }
+  },
+  "seed": 20260811,
+  "frozen_up": 150,
+  "frozen_down": 150
+}

@@ -1,0 +1,11 @@
+sample_id	cohort	stage	axis_z	response_lfc
+SYN001	synthetic	I	-0.80	-0.10
+SYN002	synthetic	I	-0.55	-0.25
+SYN003	synthetic	II	-0.30	-0.05
+SYN004	synthetic	II	-0.15	-0.30
+SYN005	synthetic	II	0.05	-0.15
+SYN006	synthetic	III	0.10	-0.20
+SYN007	synthetic	III	0.25	-0.35
+SYN008	synthetic	III	0.45	-0.18
+SYN009	synthetic	IV	0.60	-0.40
+SYN010	synthetic	IV	0.85	-0.22
