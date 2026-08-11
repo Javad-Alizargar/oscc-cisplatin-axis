@@ -12,6 +12,7 @@ import anndata as ad,numpy as np,pandas as pd
 from scipy import sparse
 from sklearn.metrics import silhouette_score
 from sklearn.neighbors import NearestNeighbors
+from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt,seaborn as sns
 SEED=20260811;scvi.settings.seed=SEED
 ROOT=Path('/content/drive/MyDrive/OSCC_Cisplatin_PhysicsInformed_StateTransitions');OUT=Path('/content/atlas_out_v1');FIG=OUT/'figures';TAB=OUT/'tables';META=OUT/'metadata'
@@ -27,7 +28,8 @@ a.layers['counts']=a.X.copy();sc.pp.highly_variable_genes(a,n_top_genes=3000,fla
 sc.pp.normalize_total(a,target_sum=1e4);sc.pp.log1p(a);sc.tl.pca(a,n_comps=30,zero_center=False,random_state=SEED)
 scvi.model.SCVI.setup_anndata(a,layer='counts',batch_key='sample_id',categorical_covariate_keys=['dataset'])
 model=scvi.model.SCVI(a,n_latent=20,n_layers=2,n_hidden=128,gene_likelihood='nb');model.train(max_epochs=150,early_stopping=True,check_val_every_n_epoch=5)
-a.obsm['X_scVI']=model.get_latent_representation();sc.pp.neighbors(a,use_rep='X_scVI',n_neighbors=30);sc.tl.umap(a,random_state=SEED);sc.tl.leiden(a,resolution=.8,key_added='scvi_cluster')
+a.obsm['X_scVI']=model.get_latent_representation();sc.pp.neighbors(a,use_rep='X_scVI',n_neighbors=30);sc.tl.umap(a,random_state=SEED)
+a.obs['scvi_cluster']=pd.Categorical(KMeans(n_clusters=14,n_init=30,random_state=SEED).fit_predict(a.obsm['X_scVI']).astype(str))
 def entropy(rep,labels,k=30,n=15000):
  rng=np.random.default_rng(SEED);ix=rng.choice(len(rep),min(n,len(rep)),False);nn=NearestNeighbors(n_neighbors=k+1).fit(rep).kneighbors(rep[ix],return_distance=False)[:,1:];lab=np.asarray(labels);out=[]
  for q in nn:
