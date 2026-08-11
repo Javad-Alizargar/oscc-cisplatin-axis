@@ -2,15 +2,17 @@
 from google.colab import drive, files
 drive.mount('/content/drive')
 
-import subprocess, sys
-subprocess.check_call([sys.executable,'-m','pip','install','-q','anndata>=0.10','h5py>=3.10'])
-
 from pathlib import Path
 import json, zipfile
-import anndata as ad
 import numpy as np
 import pandas as pd
-from scipy import sparse
+try:
+    import anndata as ad
+except Exception as exc:
+    raise RuntimeError(
+        "Colab's scientific Python environment is inconsistent. Select Runtime > Restart session, "
+        "then rerun this notebook without installing or upgrading NumPy."
+    ) from exc
 
 ROOT=Path('/content/drive/MyDrive/OSCC_Cisplatin_PhysicsInformed_StateTransitions')
 OUT=Path('/content/atlas_schema_out_v1');OUT.mkdir(parents=True,exist_ok=True)
