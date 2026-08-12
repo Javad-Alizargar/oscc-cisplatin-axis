@@ -51,19 +51,23 @@ for y0,y1,w in links2:curve(.60,y0,.84,y1,w,'#7A5195')
 ax.text(.06,.98,'Resistance program',ha='center',fontsize=7,color='#555555');ax.text(.50,.98,'Putative mechanism',ha='center',fontsize=7,color='#555555');ax.text(.94,.98,'Predicted candidate',ha='center',fontsize=7,color='#555555')
 ax.text(.50,.015,'*BRD-K31342827 exact structure unresolved; class-level links only',ha='center',fontsize=6.2,color='#555555')
 
-ax=axs[1,2];panel(ax,'f','Quantitative candidate-priority landscape')
-# Bubble size encodes leave-one-sample-out stability; outline encodes identity status.
-plot=d.copy();plot['frozen_pct']=1-plot.frozen_axis_rank.fillna(1750)/1750;plot['prism_score']=np.where(plot.PRISM_supported,np.clip(-plot.prism_uadt_median_LFC,0,1),0);plot['multi_score']=plot.frozen_pct+.65*plot.prism_score
-colors=np.where(plot.PRISM_supported,'#D55E00','#0072B2');sizes=(45+260*np.clip(plot.LOSO_min_percentile-.75,0,.25)/.25).to_numpy()
-for pos,(_,r) in enumerate(plot.iterrows()):
- edge='#111111' if r.identity_resolved else '#D55E00';mark='o' if r.identity_resolved else 'X';ax.scatter(r.state5_percentile,r.multi_score,s=sizes[pos],c=colors[pos],marker=mark,edgecolor=edge,linewidth=1.0,alpha=.82,zorder=3)
- offsets={'CPI-613':(-42,8),'bisindolylmaleimide':(5,5),'picolinic-acid':(5,5),'gemcitabine':(-48,-2)}
- if r.pert_iname in offsets:
-  ax.annotate(r.pert_iname,(r.state5_percentile,r.multi_score),xytext=offsets[r.pert_iname],textcoords='offset points',fontsize=6.5,arrowprops=dict(arrowstyle='-',lw=.45,color='#666666'))
-ax.axvline(.9,c='#777777',ls='--',lw=.8);ax.axhline(.9,c='#777777',ls='--',lw=.8);ax.fill_between([.9,1.005],[.9,.9],[1.7,1.7],color='#009E73',alpha=.06)
-ax.set_xlim(.78,1.01);ax.set_ylim(0,1.7);ax.set(xlabel='State-5 reversal percentile',ylabel='Orthogonal evidence score\n(frozen axis + PRISM)')
-ax.text(.995,1.64,f"High/high: {int(((plot.state5_percentile>=.9)&(plot.multi_score>=.9)).sum())}",ha='right',va='top',fontsize=7,fontweight='bold',color='#006D5B')
-ax.scatter([],[],c='#D55E00',s=35,label='PRISM supported');ax.scatter([],[],c='#0072B2',s=35,label='No PRISM match');ax.scatter([],[],c='white',edgecolor='#D55E00',marker='X',s=45,label='Identity unresolved');ax.legend(frameon=False,fontsize=6,loc='lower left')
+ax=axs[1,2];panel(ax,'f','Ranked multi-source candidate evidence')
+# Dense row-wise display: stacked bars are screen contributions; diamonds show
+# leave-one-sample-out stability without occupying a separate empty axis region.
+plot=d.copy();plot['frozen_pct']=1-plot.frozen_axis_rank.fillna(1750)/1750;plot['prism_scaled']=np.where(plot.PRISM_supported,np.clip(-plot.prism_uadt_median_LFC,0,1),0)
+plot['priority_total']=plot.state5_percentile+plot.frozen_pct+plot.prism_scaled
+plot=plot.sort_values('priority_total',ascending=True);y=np.arange(len(plot));left=np.zeros(len(plot))
+for col,label,color in [('state5_percentile','State-5 reversal','#0072B2'),('frozen_pct','Frozen-axis reversal','#E69F00'),('prism_scaled','PRISM depletion','#009E73')]:
+ vals=plot[col].to_numpy();ax.barh(y,vals,left=left,height=.62,color=color,label=label,edgecolor='white',linewidth=.3);left+=vals
+# Stability is displayed on the same 0–3 scale, positioned in a narrow right column.
+stability_x=2.75+.22*(plot.LOSO_min_percentile.to_numpy()-.75)/.25
+ax.scatter(stability_x,y,marker='D',s=20,c='#6A3D9A',label='LOSO stability',zorder=4)
+for pos,r in enumerate(plot.itertuples()):
+ if not r.identity_resolved:ax.scatter(3.08,pos,marker='X',s=32,c='#D55E00',linewidth=1.2,zorder=5)
+ax.axvline(2.68,c='#999999',lw=.7,ls='--');ax.text(2.86,len(plot)-.05,'Stability',ha='center',va='bottom',fontsize=6.5,color='#6A3D9A',fontweight='bold')
+ax.set_yticks(y,[x.replace('bisindolylmaleimide','bisindolylmaleimide*') for x in plot.pert_iname],fontsize=7.1);ax.set_xlim(0,3.18);ax.set_xlabel('Cumulative normalized evidence');ax.set_ylabel('')
+ax.set_xticks([0,1,2,3]);ax.grid(axis='x',color='#DDDDDD',lw=.5);ax.legend(frameon=False,fontsize=6.2,ncol=2,loc='lower right')
+ax.text(.01,.01,'*Exact identity unresolved; orange X at right',transform=ax.transAxes,fontsize=5.8,color='#555555')
 fig.suptitle('Evidence audit separates computational convergence from validated sensitization',fontweight='bold',fontsize=15)
 fig.savefig(FIG/'Figure_candidate_audit_v1.png',dpi=300,bbox_inches='tight');fig.savefig(FIG/'Figure_candidate_audit_v1.pdf',bbox_inches='tight');fig.savefig(FIG/'Figure_candidate_audit_v1.tif',dpi=600,bbox_inches='tight',pil_kwargs={'compression':'tiff_lzw'});plt.close(fig)
 summary={'recommended_lead':'CPI-613 (devimistat): strongest state-specific and frozen-axis reversal, but no direct OSCC or current PRISM validation','identity_hold':'BRD-K31342827: do not assign a specific bisindolylmaleimide structure or mechanism','secondary':'picolinic acid: weak state-5/PRISM hypothesis','directly_validated_sensitizers':0,'claim':'Computationally prioritized candidates for experimental cisplatin-combination testing.'};(META/'summary_v1.json').write_text(json.dumps(summary,indent=2)+'\n')
