@@ -34,13 +34,36 @@ for i,(n,t) in enumerate(items):
 ax=axs[0,1];panel(ax,'b','Quantitative evidence for shortlisted drugs');show=d.head(10);x=np.arange(len(show));ax.scatter(x,show.state5_percentile,label='State-5 percentile',s=35);ax.scatter(x,1-show.frozen_axis_rank/1750,label='Frozen-axis percentile',s=35);ax.scatter(x,np.where(show.PRISM_supported,np.clip(-show.prism_uadt_median_LFC,0,1),np.nan),label='PRISM depletion',s=35);ax.set_xticks(x,show.pert_iname,rotation=65,ha='right',fontsize=6);ax.set_ylim(0,1.05);ax.set_ylabel('Evidence metric (0–1)');ax.legend(frameon=False,fontsize=6)
 ax=axs[0,2];panel(ax,'c','Independent evidence matrix');em=show.set_index('pert_iname')[['identity_resolved','state5_robust','dual_transcriptomic','PRISM_depletion','direct_OSCC_cisplatin_evidence']].astype(float);sns.heatmap(em,cmap=sns.color_palette(['#F2F2F2','#228833'],as_cmap=True),vmin=0,vmax=1,cbar=False,linewidths=.5,ax=ax);ax.set_xticklabels(['Identity','State-5','Frozen axis','PRISM','Direct OSCC'],rotation=25,ha='right');ax.set_ylabel('')
 ax=axs[1,0];panel(ax,'d','Cross-cell-line state-5 reversal');z=show.sort_values('state5_reversal');y=np.arange(len(z));ax.hlines(y,z.q25,z.q75,color='#999999');ax.scatter(z.state5_reversal,y,c=np.where(z.PRISM_supported,'#D55E00','#0072B2'),s=30);ax.axvline(0,c='k',lw=.7);ax.set_yticks(y,z.pert_iname,fontsize=7);ax.set_xlabel('LINCS median reversal (IQR)')
-ax=axs[1,1];panel(ax,'e','Mechanistic program–candidate map');ax.axis('off');progs=['Mitochondrial\nmetabolism','UPR / stress','Drug transport','MAPK signaling'];drugs=['CPI-613','Bisindolylmaleimide*','Selumetinib','Trametinib'];links=[(0,0,.95),(1,0,.45),(2,1,.55),(3,2,.8),(3,3,.8)]
-for i,p in enumerate(progs):ax.text(.1,.85-i*.22,p,ha='center',va='center',fontsize=7,bbox=dict(boxstyle='round',fc='#56B4E9',alpha=.75))
-for j,p in enumerate(drugs):ax.text(.9,.85-j*.22,p,ha='center',va='center',fontsize=7,bbox=dict(boxstyle='round',fc='#E69F00',alpha=.75))
-for i,j,w in links:path=MPath([(.2,.85-i*.22),(.45,.85-i*.22),(.55,.85-j*.22),(.8,.85-j*.22)],[MPath.MOVETO,MPath.CURVE4,MPath.CURVE4,MPath.CURVE4]);ax.add_patch(PathPatch(path,facecolor='none',edgecolor='#7A5195',lw=1+4*w,alpha=.25+.5*w))
-ax.text(.5,.02,'*Exact bisindolylmaleimide structure unresolved',ha='center',fontsize=6)
-ax=axs[1,2];panel(ax,'f','Claim ceiling after literature audit');ax.axis('off');lines=[('CPI-613','Leading predicted sensitizer','No direct OSCC evidence; phase III failures elsewhere'),('Bisindolylmaleimide','Unresolved three-screen hit','Resolve exact structure before mechanism/lab work'),('Picolinic acid','Secondary computational hypothesis','Weak PRISM depletion; no direct evidence')]
-for i,(n,c,l) in enumerate(lines):y=.88-i*.29;ax.text(.02,y,n,fontweight='bold',fontsize=9);ax.text(.02,y-.08,c,color='#0072B2',fontsize=8);ax.text(.02,y-.16,l,color='#555555',fontsize=7,wrap=True)
+ax=axs[1,1];panel(ax,'e','Program–mechanism–candidate evidence network');ax.axis('off')
+# Three-level alluvial layout. Links denote verified mechanism/rationale, not efficacy.
+program_nodes=[('Mitochondrial\nmetabolism',.88),('UPR / stress',.66),('Drug transport',.44),('MAPK signaling',.22)]
+mechanism_nodes=[('PDH / TCA',.88),('PKC / ABCG2*',.62),('DHODH',.42),('MEK1/2',.20)]
+drug_nodes=[('CPI-613',.90),('Bisindolylmaleimide*',.70),('Teriflunomide',.49),('Selumetinib',.28),('Trametinib',.10)]
+for label,y0 in program_nodes:ax.text(.06,y0,label,ha='center',va='center',fontsize=7.5,fontweight='bold',bbox=dict(boxstyle='round,pad=.25',fc='#56B4E9',ec='none',alpha=.85))
+for label,y0 in mechanism_nodes:ax.text(.50,y0,label,ha='center',va='center',fontsize=7.3,fontweight='bold',bbox=dict(boxstyle='round,pad=.25',fc='#CC79A7',ec='none',alpha=.78))
+for label,y0 in drug_nodes:ax.text(.94,y0,label,ha='center',va='center',fontsize=7.2,fontweight='bold',bbox=dict(boxstyle='round,pad=.25',fc='#E69F00',ec='none',alpha=.82))
+links1=[(.88,.88,.95),(.66,.88,.45),(.66,.62,.35),(.44,.62,.85),(.66,.42,.35),(.22,.20,.95)]
+links2=[(.88,.90,.95),(.62,.70,.85),(.42,.49,.72),(.20,.28,.80),(.20,.10,.80)]
+def curve(x0,y0,x1,y1,w,color):
+ path=MPath([(x0,y0),(x0+.14,y0),(x1-.14,y1),(x1,y1)],[MPath.MOVETO,MPath.CURVE4,MPath.CURVE4,MPath.CURVE4]);ax.add_patch(PathPatch(path,facecolor='none',edgecolor=color,lw=1.5+5*w,alpha=.18+.48*w,capstyle='round'))
+for y0,y1,w in links1:curve(.16,y0,.40,y1,w,'#7A5195')
+for y0,y1,w in links2:curve(.60,y0,.84,y1,w,'#7A5195')
+ax.text(.06,.98,'Resistance program',ha='center',fontsize=7,color='#555555');ax.text(.50,.98,'Putative mechanism',ha='center',fontsize=7,color='#555555');ax.text(.94,.98,'Predicted candidate',ha='center',fontsize=7,color='#555555')
+ax.text(.50,.015,'*BRD-K31342827 exact structure unresolved; class-level links only',ha='center',fontsize=6.2,color='#555555')
+
+ax=axs[1,2];panel(ax,'f','Quantitative candidate-priority landscape')
+# Bubble size encodes leave-one-sample-out stability; outline encodes identity status.
+plot=d.copy();plot['frozen_pct']=1-plot.frozen_axis_rank.fillna(1750)/1750;plot['prism_score']=np.where(plot.PRISM_supported,np.clip(-plot.prism_uadt_median_LFC,0,1),0);plot['multi_score']=plot.frozen_pct+.65*plot.prism_score
+colors=np.where(plot.PRISM_supported,'#D55E00','#0072B2');sizes=(45+260*np.clip(plot.LOSO_min_percentile-.75,0,.25)/.25).to_numpy()
+for pos,(_,r) in enumerate(plot.iterrows()):
+ edge='#111111' if r.identity_resolved else '#D55E00';mark='o' if r.identity_resolved else 'X';ax.scatter(r.state5_percentile,r.multi_score,s=sizes[pos],c=colors[pos],marker=mark,edgecolor=edge,linewidth=1.0,alpha=.82,zorder=3)
+ offsets={'CPI-613':(-42,8),'bisindolylmaleimide':(5,5),'picolinic-acid':(5,5),'gemcitabine':(-48,-2)}
+ if r.pert_iname in offsets:
+  ax.annotate(r.pert_iname,(r.state5_percentile,r.multi_score),xytext=offsets[r.pert_iname],textcoords='offset points',fontsize=6.5,arrowprops=dict(arrowstyle='-',lw=.45,color='#666666'))
+ax.axvline(.9,c='#777777',ls='--',lw=.8);ax.axhline(.9,c='#777777',ls='--',lw=.8);ax.fill_between([.9,1.005],[.9,.9],[1.7,1.7],color='#009E73',alpha=.06)
+ax.set_xlim(.78,1.01);ax.set_ylim(0,1.7);ax.set(xlabel='State-5 reversal percentile',ylabel='Orthogonal evidence score\n(frozen axis + PRISM)')
+ax.text(.995,1.64,f"High/high: {int(((plot.state5_percentile>=.9)&(plot.multi_score>=.9)).sum())}",ha='right',va='top',fontsize=7,fontweight='bold',color='#006D5B')
+ax.scatter([],[],c='#D55E00',s=35,label='PRISM supported');ax.scatter([],[],c='#0072B2',s=35,label='No PRISM match');ax.scatter([],[],c='white',edgecolor='#D55E00',marker='X',s=45,label='Identity unresolved');ax.legend(frameon=False,fontsize=6,loc='lower left')
 fig.suptitle('Evidence audit separates computational convergence from validated sensitization',fontweight='bold',fontsize=15)
 fig.savefig(FIG/'Figure_candidate_audit_v1.png',dpi=300,bbox_inches='tight');fig.savefig(FIG/'Figure_candidate_audit_v1.pdf',bbox_inches='tight');fig.savefig(FIG/'Figure_candidate_audit_v1.tif',dpi=600,bbox_inches='tight',pil_kwargs={'compression':'tiff_lzw'});plt.close(fig)
 summary={'recommended_lead':'CPI-613 (devimistat): strongest state-specific and frozen-axis reversal, but no direct OSCC or current PRISM validation','identity_hold':'BRD-K31342827: do not assign a specific bisindolylmaleimide structure or mechanism','secondary':'picolinic acid: weak state-5/PRISM hypothesis','directly_validated_sensitizers':0,'claim':'Computationally prioritized candidates for experimental cisplatin-combination testing.'};(META/'summary_v1.json').write_text(json.dumps(summary,indent=2)+'\n')
