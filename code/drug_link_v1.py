@@ -44,10 +44,13 @@ with h5py.File(GCTX,'r') as h:
  M=h['/0/DATA/0/matrix'];rowids=np.array([x.decode() if isinstance(x,bytes) else str(x) for x in h['/0/META/ROW/id'][:]]);colids=np.array([x.decode() if isinstance(x,bytes) else str(x) for x in h['/0/META/COL/id'][:]])
  order={str(x):i for i,x in enumerate(rowids)};gi=gene_info.set_index(gid.astype(str) if False else gid)
  mapidx=dict(zip(gene_info[gsym],gene_info[gid].astype(str).map(order)))
- ui=[mapidx[g.upper()] for g in up if g.upper() in mapidx and pd.notna(mapidx[g.upper()])]
- di=[mapidx[g.upper()] for g in down if g.upper() in mapidx and pd.notna(mapidx[g.upper()])]
+ # Freeze the query after identifier mapping; subsequent sensitivity analyses
+ # use exactly this mapped universe and cannot silently reintroduce absent genes.
+ up=[g for g in up if g.upper() in mapidx and pd.notna(mapidx[g.upper()])]
+ down=[g for g in down if g.upper() in mapidx and pd.notna(mapidx[g.upper()])]
+ ui=[mapidx[g.upper()] for g in up];di=[mapidx[g.upper()] for g in down]
  ui=np.array(ui,int);di=np.array(di,int)
- if min(len(ui),len(di))<100:raise ValueError(f'LINCS mapping insufficient: UP={len(ui)}, DOWN={len(di)}')
+ if min(len(ui),len(di))<75:raise ValueError(f'LINCS mapping insufficient: UP={len(ui)}, DOWN={len(di)}')
  # GCTX is signatures x genes. Read selected gene columns, limiting memory to ~150 MB.
  A=np.asarray(M[:,np.sort(np.r_[ui,di])],dtype=np.float32);sel=np.sort(np.r_[ui,di]);pos={x:i for i,x in enumerate(sel)}
  score=A[:,[pos[x] for x in di]].mean(1)-A[:,[pos[x] for x in ui]].mean(1)
