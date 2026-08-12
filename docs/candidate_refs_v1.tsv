@@ -1,0 +1,9 @@
+citation_order	pmid	doi	title	supported_use
+1	37115501	10.1158/1078-0432.CCR-22-3505	Devimistat with gemcitabine and cisplatin in biliary tract cancer	CPI-613 combination precedent; different cancer
+2	39088774	10.1200/JCO.23.02659	AVENGER 500 phase III study	Negative phase III evidence for devimistat
+3	40454396		ARMADA phase III trial	Negative/limiting phase III evidence for devimistat
+4	26657401	10.1371/journal.pone.0144667	PKC-independent transporter effects of Ro 31-8220	Chemical-class caution; not identity proof
+5	17575116	10.1158/1535-7163.MCT-06-0811	ABCG2 inhibition by bisindolylmaleimides	Chemical-class transporter evidence; not identity proof
+6	29523854		Cisplatin oxidative stress and carbon metabolism in HNSCC	HNSCC metabolic rationale
+7	31534516		Mitochondrial metabolism and cisplatin resistance in tongue SCC	OSCC/TSCC metabolic rationale
+8	38164660	10.1002/hed.27620	ATP7B and extracellular-vesicle cisplatin resistance in HNSCC	Direct disease-context resistance biology
